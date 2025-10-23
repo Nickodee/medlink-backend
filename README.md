@@ -302,6 +302,36 @@ npm start
 - CORS configuration
 - Environment variable protection
 
+### ⚠️ Security Recommendations for Production
+
+Based on security analysis, the following enhancements are recommended before deploying to production:
+
+1. **Rate Limiting**: Add rate limiting middleware (e.g., `express-rate-limit`) to prevent DoS attacks
+   ```bash
+   npm install express-rate-limit
+   ```
+
+2. **Input Sanitization**: Enhance input validation using `express-validator` and sanitize user inputs, especially for regex operations
+
+3. **CORS Configuration**: Configure CORS to allow only specific trusted domains instead of wildcards
+
+4. **Sensitive Data Handling**: 
+   - Avoid passing sensitive data in GET query parameters
+   - Use POST requests with body payloads for sensitive operations
+
+5. **Database Query Protection**: While Mongoose provides some protection, always validate and sanitize user inputs before using them in queries
+
+6. **Security Headers**: Add helmet.js for security headers
+   ```bash
+   npm install helmet
+   ```
+
+7. **Logging and Monitoring**: Implement comprehensive logging (Winston, Morgan) and monitoring solutions
+
+8. **SSL/TLS**: Always use HTTPS in production environments
+
+9. **API Documentation**: Consider using Swagger/OpenAPI for API documentation and testing
+
 ## 🧪 Testing
 
 To add testing to the project:
