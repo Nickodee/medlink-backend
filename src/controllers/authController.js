@@ -4,9 +4,19 @@ const Doctor = require('../models/Doctor');
 const { generateToken } = require('../utils/jwt');
 const { generateOTP, sendOTP, verifyOTP } = require('../services/otpService');
 
-// @desc    Register user (patient or doctor)
-// @route   POST /api/auth/register
-// @access  Public
+/**
+ * @desc    Register a new user (patient or doctor)
+ * @route   POST /api/auth/register
+ * @access  Public
+ * @param   {Object} req.body - User registration data
+ * @param   {string} req.body.phone - User's phone number in E.164 format
+ * @param   {string} req.body.email - User's email address (optional)
+ * @param   {string} req.body.firstName - User's first name
+ * @param   {string} req.body.lastName - User's last name
+ * @param   {string} req.body.password - User's password (min 8 characters)
+ * @param   {string} req.body.role - User role: 'patient' | 'doctor' | 'admin' (default: 'patient')
+ * @returns {Object} Success response with user ID and OTP (in development mode)
+ */
 const register = async (req, res) => {
   try {
     const { phone, email, firstName, lastName, role, password } = req.body;
@@ -62,9 +72,15 @@ const register = async (req, res) => {
   }
 };
 
-// @desc    Verify OTP
-// @route   POST /api/auth/verify-otp
-// @access  Public
+/**
+ * @desc    Verify OTP sent to user's phone
+ * @route   POST /api/auth/verify-otp
+ * @access  Public
+ * @param   {Object} req.body - OTP verification data
+ * @param   {string} req.body.phone - User's phone number
+ * @param   {string} req.body.otp - 6-digit OTP code
+ * @returns {Object} Success response with JWT token and user data
+ */
 const verifyOTPController = async (req, res) => {
   try {
     const { phone, otp } = req.body;
@@ -119,9 +135,15 @@ const verifyOTPController = async (req, res) => {
   }
 };
 
-// @desc    Login user
-// @route   POST /api/auth/login
-// @access  Public
+/**
+ * @desc    Login user with phone and password
+ * @route   POST /api/auth/login
+ * @access  Public
+ * @param   {Object} req.body - Login credentials
+ * @param   {string} req.body.phone - User's phone number
+ * @param   {string} req.body.password - User's password
+ * @returns {Object} Success response with JWT token and user data
+ */
 const login = async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -180,9 +202,14 @@ const login = async (req, res) => {
   }
 };
 
-// @desc    Resend OTP
-// @route   POST /api/auth/resend-otp
-// @access  Public
+/**
+ * @desc    Resend OTP to user's phone
+ * @route   POST /api/auth/resend-otp
+ * @access  Public
+ * @param   {Object} req.body - Resend OTP data
+ * @param   {string} req.body.phone - User's phone number
+ * @returns {Object} Success response with new OTP (in development mode)
+ */
 const resendOTP = async (req, res) => {
   try {
     const { phone } = req.body;
@@ -227,9 +254,12 @@ const resendOTP = async (req, res) => {
   }
 };
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
+/**
+ * @desc    Get currently authenticated user
+ * @route   GET /api/auth/me
+ * @access  Private (requires authentication)
+ * @returns {Object} Success response with current user data
+ */
 const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
