@@ -69,7 +69,7 @@ A comprehensive Node.js + Express backend for a telemedicine application that co
    MONGODB_URI=mongodb://localhost:27017/medlink
    
    # JWT Configuration
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   JWT_SECRET=7a8f9d2e4b6c1a3e5d7f9b2c4e6a8d0f1b3d5e7f9a1c3e5d7f9b2c4e6a8d0f2
    JWT_EXPIRE=7d
    
    # Africa's Talking (for OTP)
@@ -225,7 +225,7 @@ curl -X POST http://localhost:5000/api/auth/register \
     "firstName": "John",
     "lastName": "Doe",
     "email": "john.doe@example.com",
-    "password": "SecurePass123",
+    "password": "MySecure#Pass2024",
     "role": "patient"
   }'
 ```
