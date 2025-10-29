@@ -61,25 +61,37 @@ A comprehensive Node.js + Express backend for a telemedicine application that co
    
    Edit `.env` file with your configuration:
    ```env
+   # Server Configuration
    NODE_ENV=development
    PORT=5000
+   
+   # Database
    MONGODB_URI=mongodb://localhost:27017/medlink
-   JWT_SECRET=your-super-secret-jwt-key
+   
+   # JWT Configuration
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
    JWT_EXPIRE=7d
    
    # Africa's Talking (for OTP)
    AFRICASTALKING_USERNAME=sandbox
    AFRICASTALKING_API_KEY=your-api-key
    
-   # M-Pesa
+   # M-Pesa Payment Integration
    MPESA_CONSUMER_KEY=your-consumer-key
    MPESA_CONSUMER_SECRET=your-consumer-secret
    MPESA_SHORTCODE=174379
    MPESA_PASSKEY=your-passkey
    MPESA_CALLBACK_URL=https://yourdomain.com/api/payments/callback
    
+   # CORS Configuration
    CORS_ORIGIN=http://localhost:3000
    ```
+
+   **Important Notes:**
+   - The `JWT_SECRET` should be a long, random string in production
+   - Use a strong password for MongoDB in production
+   - Update `CORS_ORIGIN` to your frontend domain
+   - M-Pesa credentials are for sandbox testing by default
 
 4. **Start MongoDB**
    ```bash
@@ -212,10 +224,27 @@ curl -X POST http://localhost:5000/api/auth/register \
     "phone": "+254712345678",
     "firstName": "John",
     "lastName": "Doe",
-    "password": "securepassword",
+    "email": "john.doe@example.com",
+    "password": "SecurePass123",
     "role": "patient"
   }'
 ```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "User registered successfully. OTP sent to phone.",
+  "data": {
+    "userId": "64a1b2c3d4e5f6789",
+    "phone": "+254712345678",
+    "role": "patient"
+  },
+  "otp": "123456"
+}
+```
+
+**Note:** OTP is only returned in development mode for testing purposes.
 
 ### Verify OTP
 ```bash
@@ -227,21 +256,63 @@ curl -X POST http://localhost:5000/api/auth/verify-otp \
   }'
 ```
 
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Phone verified successfully",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": "64a1b2c3d4e5f6789",
+      "phone": "+254712345678",
+      "email": "john.doe@example.com",
+      "firstName": "John",
+      "lastName": "Doe",
+      "role": "patient"
+    }
+  }
+}
+```
+
 ### Create an appointment
 ```bash
 curl -X POST http://localhost:5000/api/appointments \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <your-token>" \
   -d '{
-    "patientId": "patient-id",
-    "doctorId": "doctor-id",
+    "patientId": "64a1b2c3d4e5f6789",
+    "doctorId": "64a1b2c3d4e5f6790",
     "appointmentDate": "2025-11-01",
     "appointmentTime": "10:00",
     "type": "video",
-    "reason": "General checkup",
+    "reason": "General checkup and consultation for persistent headaches",
     "paymentAmount": 1000,
     "paymentPhone": "+254712345678"
   }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Appointment created successfully",
+  "data": {
+    "_id": "64a1b2c3d4e5f6791",
+    "patientId": "64a1b2c3d4e5f6789",
+    "doctorId": "64a1b2c3d4e5f6790",
+    "appointmentDate": "2025-11-01T00:00:00.000Z",
+    "appointmentTime": "10:00",
+    "type": "video",
+    "reason": "General checkup and consultation for persistent headaches",
+    "status": "scheduled",
+    "payment": {
+      "amount": 1000,
+      "status": "pending",
+      "transactionId": "mock_checkout_1234567890"
+    }
+  }
+}
 ```
 
 ## 🔧 Development
@@ -252,6 +323,36 @@ npm run dev
 ```
 
 This uses nodemon for automatic server restart on file changes.
+
+### Input Validation
+
+All API endpoints include comprehensive input validation. Invalid requests return detailed error messages:
+
+**Example validation error response:**
+```json
+{
+  "success": false,
+  "message": "Validation failed",
+  "errors": [
+    {
+      "field": "phone",
+      "message": "Phone number must be in E.164 format (e.g., +254712345678)"
+    },
+    {
+      "field": "password",
+      "message": "Password must be at least 8 characters long"
+    }
+  ]
+}
+```
+
+**Validation Rules:**
+- **Phone numbers**: Must be in E.164 format (e.g., +254712345678)
+- **Passwords**: Minimum 8 characters, must contain uppercase, lowercase, and number
+- **Emails**: Must be valid RFC 5322 compliant email addresses
+- **Dates**: Must be in ISO 8601 format
+- **MongoDB IDs**: Must be valid ObjectId format
+- **Appointment reasons**: Minimum 10 characters, maximum 500 characters
 
 ## 📦 Dependencies
 
@@ -264,6 +365,9 @@ This uses nodemon for automatic server restart on file changes.
 - **dotenv** - Environment variables
 - **express-validator** - Input validation
 - **axios** - HTTP client for external APIs
+- **helmet** - Security headers middleware
+- **express-rate-limit** - Rate limiting middleware
+- **morgan** - HTTP request logger
 
 ### Dev Dependencies
 - **nodemon** - Auto-restart development server
@@ -273,13 +377,12 @@ This uses nodemon for automatic server restart on file changes.
 ### Important considerations for production:
 
 1. **Environment Variables**: Set all required environment variables
-2. **Database**: Use MongoDB Atlas or managed MongoDB instance
+2. **Database**: Use MongoDB Atlas or managed MongoDB instance with authentication
 3. **SSL/TLS**: Enable HTTPS for secure communication
 4. **Africa's Talking**: Configure with production credentials
 5. **M-Pesa**: Switch to production endpoints and credentials
-6. **Error Logging**: Implement proper logging (Winston, Morgan, etc.)
-7. **Rate Limiting**: Add rate limiting middleware
-8. **Security Headers**: Use helmet.js for security headers
+6. **Monitoring**: Set up application monitoring and error tracking
+7. **Backups**: Implement automated database backups
 
 ### Example production setup:
 ```bash
@@ -295,42 +398,43 @@ npm start
 
 ## 🔒 Security Features
 
-- Password hashing with bcrypt
-- JWT token-based authentication
-- Role-based access control
-- Input validation and sanitization
-- CORS configuration
+- Password hashing with bcrypt (10 salt rounds)
+- JWT token-based authentication with configurable expiration
+- Role-based access control (Patient, Doctor, Admin)
+- Input validation and sanitization with express-validator
+- CORS configuration with configurable origins
 - Environment variable protection
+- **Rate Limiting**: 
+  - General API: 100 requests per 15 minutes per IP
+  - Auth routes: 5 requests per 15 minutes per IP
+- **Security Headers**: Helmet.js integration for HTTP security headers
+- **Request Logging**: Morgan logger for development and production
+- **Phone Number Validation**: E.164 format enforcement (e.g., +254712345678)
+- **Email Validation**: RFC 5322 compliant email validation
 
-### ⚠️ Security Recommendations for Production
+### ✅ Implemented Security Features
 
-Based on security analysis, the following enhancements are recommended before deploying to production:
+The following security features are now implemented in the codebase:
 
-1. **Rate Limiting**: Add rate limiting middleware (e.g., `express-rate-limit`) to prevent DoS attacks
-   ```bash
-   npm install express-rate-limit
-   ```
+1. **✅ Rate Limiting**: Implemented using `express-rate-limit`
+   - General API routes: 100 requests per 15 minutes
+   - Authentication routes: 5 requests per 15 minutes
 
-2. **Input Sanitization**: Enhance input validation using `express-validator` and sanitize user inputs, especially for regex operations
+2. **✅ Input Validation**: Comprehensive validation using `express-validator`
+   - All routes have input validation middleware
+   - Phone numbers validated in E.164 format
+   - Email validation with RFC 5322 compliance
+   - Password strength requirements enforced
 
-3. **CORS Configuration**: Configure CORS to allow only specific trusted domains instead of wildcards
+3. **✅ CORS Configuration**: Configured to allow specific trusted domains via environment variable
 
-4. **Sensitive Data Handling**: 
-   - Avoid passing sensitive data in GET query parameters
-   - Use POST requests with body payloads for sensitive operations
+4. **✅ Security Headers**: Helmet.js integrated for HTTP security headers
 
-5. **Database Query Protection**: While Mongoose provides some protection, always validate and sanitize user inputs before using them in queries
+5. **✅ Request Logging**: Morgan logger configured for development and production
 
-6. **Security Headers**: Add helmet.js for security headers
-   ```bash
-   npm install helmet
-   ```
+6. **✅ Error Handling**: Enhanced error handler with proper status codes and messages
 
-7. **Logging and Monitoring**: Implement comprehensive logging (Winston, Morgan) and monitoring solutions
-
-8. **SSL/TLS**: Always use HTTPS in production environments
-
-9. **API Documentation**: Consider using Swagger/OpenAPI for API documentation and testing
+### ⚠️ Additional Security Recommendations for Production
 
 ## 🧪 Testing
 
