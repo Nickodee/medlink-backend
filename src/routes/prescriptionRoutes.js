@@ -9,12 +9,19 @@ const {
   deletePrescription,
 } = require('../controllers/prescriptionController');
 const { protect, authorize } = require('../middleware/auth');
+const {
+  createPrescriptionValidation,
+  updatePrescriptionValidation,
+  fulfillPrescriptionValidation,
+  getPrescriptionsValidation,
+  idValidation,
+} = require('../validators/prescriptionValidator');
 
-router.post('/', protect, authorize('doctor'), createPrescription);
-router.get('/', protect, getPrescriptions);
-router.get('/:id', protect, getPrescriptionById);
-router.put('/:id', protect, authorize('doctor'), updatePrescription);
-router.put('/:id/fulfill', protect, fulfillPrescription);
-router.delete('/:id', protect, authorize('doctor', 'admin'), deletePrescription);
+router.post('/', protect, authorize('doctor'), createPrescriptionValidation, createPrescription);
+router.get('/', protect, getPrescriptionsValidation, getPrescriptions);
+router.get('/:id', protect, idValidation, getPrescriptionById);
+router.put('/:id', protect, authorize('doctor'), updatePrescriptionValidation, updatePrescription);
+router.put('/:id/fulfill', protect, fulfillPrescriptionValidation, fulfillPrescription);
+router.delete('/:id', protect, authorize('doctor', 'admin'), idValidation, deletePrescription);
 
 module.exports = router;

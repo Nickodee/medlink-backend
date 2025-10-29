@@ -8,11 +8,17 @@ const {
   getMe,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const {
+  registerValidation,
+  verifyOTPValidation,
+  loginValidation,
+  resendOTPValidation,
+} = require('../validators/authValidator');
 
-router.post('/register', register);
-router.post('/verify-otp', verifyOTPController);
-router.post('/login', login);
-router.post('/resend-otp', resendOTP);
+router.post('/register', registerValidation, register);
+router.post('/verify-otp', verifyOTPValidation, verifyOTPController);
+router.post('/login', loginValidation, login);
+router.post('/resend-otp', resendOTPValidation, resendOTP);
 router.get('/me', protect, getMe);
 
 module.exports = router;
